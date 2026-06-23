@@ -3,19 +3,23 @@
 import { useState, useEffect, useRef } from "react";
 import api from "@/lib/api";
 import type { DocumentItem } from "@/types";
-import { Upload, FileText, Trash2, CheckCircle, XCircle, Clock, Filter } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Upload, FileText, Trash2, CheckCircle, XCircle, Clock, Filter, MessageSquare } from "lucide-react";
 
 const DEPARTMENTS = ["company-wide", "hr", "finance", "marketing", "engineering"];
 const SENSITIVITY_LEVELS = ["public", "internal", "confidential", "restricted"];
 
 export default function DocumentsPage() {
+  const router = useRouter();
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [department, setDepartment] = useState("company-wide");
   const [sensitivity, setSensitivity] = useState("internal");
   const [filterDept, setFilterDept] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const MAX_SIZE = 100 * 1024 * 1024; // 100 MB
 
   useEffect(() => {
     loadDocuments();
@@ -35,6 +39,13 @@ export default function DocumentsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setUploadError("");
+    if (file.size > MAX_SIZE) {
+      setUploadError(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum allowed: 100 MB`);
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -46,8 +57,8 @@ export default function DocumentsPage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       loadDocuments();
-    } catch (err) {
-      console.error("Upload failed:", err);
+    } catch (err: any) {
+      setUploadError(err.response?.data?.detail || "Upload failed");
     }
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
@@ -116,7 +127,7 @@ export default function DocumentsPage() {
               <input
                 ref={fileRef}
                 type="file"
-                accept=".pdf,.docx,.txt,.csv"
+                accept=".pdf,.docx,.txt,.csv,.xlsx,.xls"
                 onChange={handleUpload}
                 className="hidden"
                 disabled={uploading}
@@ -124,7 +135,10 @@ export default function DocumentsPage() {
             </label>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">Supported: PDF, DOCX, TXT, CSV</p>
+        {uploadError && (
+          <p className="text-xs text-destructive mb-2">{uploadError}</p>
+        )}
+        <p className="text-xs text-muted-foreground">Supported: PDF, DOCX, TXT, CSV, XLSX &bull; Max: 100 MB</p>
       </div>
 
       {/* Filters */}
@@ -154,7 +168,7 @@ export default function DocumentsPage() {
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Status</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Chunks</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Uploaded</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Actions</th>
+                <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -193,12 +207,23 @@ export default function DocumentsPage() {
                   <td className="px-4 py-3 text-sm text-muted-foreground">{doc.chunk_count}</td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">{new Date(doc.created_at).toLocaleDateString()}</td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleDelete(doc.id)}
-                      className="p-1.5 text-destructive hover:bg-destructive/10 rounded transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      {doc.status === "ready" && (
+                        <button
+                          onClick={() => router.push(`/chat?document_id=${doc.id}`)}
+                          className="p-1.5 text-primary hover:bg-primary/10 rounded transition-colors"
+                          title="Ask AI about this document"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDelete(doc.id)}
+                        className="p-1.5 text-destructive hover:bg-destructive/10 rounded transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

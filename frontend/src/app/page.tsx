@@ -3,8 +3,14 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
+import Navbar from "@/components/Navbar";
+import Hero from "@/components/Hero";
+import Features from "@/components/Features";
+import FAQ from "@/components/FAQ";
+import CTA from "@/components/CTA";
+import Footer from "@/components/Footer";
 
-export default function Home() {
+export default function LandingPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading, fetchUser } = useAuthStore();
 
@@ -13,20 +19,19 @@ export default function Home() {
   }, [fetchUser]);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
-        router.push("/chat");
-      } else {
-        router.push("/login");
-      }
+    if (!isLoading && isAuthenticated) {
+      router.push("/chat");
     }
   }, [isLoading, isAuthenticated, router]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-pulse text-lg text-muted-foreground">
-        Loading Enterprise Knowledge Assistant...
-      </div>
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <Hero />
+      <Features />
+      <FAQ />
+      <CTA />
+      <Footer />
     </div>
   );
 }

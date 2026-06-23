@@ -1,0 +1,7 @@
+services:
+  - type: web_service
+    name: rag-ai-chabot-backend
+    env: docker
+    branch: main
+    dockerfilePath: backend/Dockerfile
+    plan: starter

@@ -10,16 +10,45 @@ from app.core.security import (
     verify_token,
 )
 from app.core.exceptions import AuthenticationError
-from app.models.user import User
+from app.models.user import User, Role
 from app.schemas import (
     LoginRequest,
+    RegisterRequest,
     TokenResponse,
     RefreshRequest,
     UserResponse,
 )
 from app.api.deps import get_current_user
+from app.core.security import hash_password
 
 router = APIRouter()
+
+
+@router.post("/register", response_model=UserResponse, status_code=201)
+async def register(request: RegisterRequest):
+    """Register a new user account."""
+    existing = await User.find_one(User.email == request.email)
+    if existing:
+        raise AuthenticationError("A user with this email already exists")
+
+    user = User(
+        email=request.email,
+        hashed_password=hash_password(request.password),
+        full_name=request.full_name,
+        role=Role.EMPLOYEE,
+        departments=[request.department] if request.department else [],
+    )
+    await user.insert()
+
+    return UserResponse(
+        id=str(user.id),
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role,
+        departments=user.departments,
+        is_active=user.is_active,
+        created_at=user.created_at,
+    )
 
 
 @router.post("/login", response_model=TokenResponse)

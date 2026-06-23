@@ -23,11 +23,13 @@ class ChatService:
         message: str,
         conversation_id: Optional[str] = None,
         request_id: Optional[str] = None,
+        document_ids: Optional[list[str]] = None,
     ) -> dict:
         """Process a user message through the RAG pipeline."""
         request_id = request_id or str(uuid.uuid4())
 
         # Get or create conversation
+        conversation = None
         if conversation_id:
             conversation = await Conversation.get(conversation_id)
             if conversation is None or conversation.user_id != str(user.id):
@@ -67,6 +69,7 @@ class ChatService:
             user_departments=user.departments,
             conversation_history=history_dicts,
             request_id=request_id,
+            document_ids=document_ids,
         )
 
         # Save assistant message
@@ -89,7 +92,7 @@ class ChatService:
         return {
             "response": result["response"],
             "conversation_id": str(conversation.id),
-            "sources": result.get("sources", []),
+            "sources": result.get("sources") or [],
             "blocked": result.get("blocked", False),
             "block_reason": result.get("block_reason"),
             "prompt_tokens": result.get("prompt_tokens", 0),

@@ -12,11 +12,13 @@ def get_parser(file_path: str):
         ".docx": DOCXParser,
         ".txt": TXTParser,
         ".csv": CSVParser,
+        ".xlsx": XLSXParser,
+        ".xls": XLSXParser,
     }
     
     parser_class = parsers.get(ext)
     if parser_class is None:
-        raise ValueError(f"Unsupported file type: {ext}")
+        raise ValueError(f"Unsupported file type: {ext}. Supported: PDF, DOCX, TXT, CSV, XLSX")
     
     return parser_class()
 
@@ -83,8 +85,31 @@ class CSVParser(BaseParser):
         text_parts = [f"CSV Data with {len(df)} rows and columns: {', '.join(df.columns.tolist())}"]
         
         # Convert each row to a readable format
-        for idx, row in df.iterrows():
+        for row_num, (_, row) in enumerate(df.iterrows(), 1):
             row_text = " | ".join(f"{col}: {val}" for col, val in row.items() if pd.notna(val))
-            text_parts.append(f"Row {idx + 1}: {row_text}")
+            text_parts.append(f"Row {row_num}: {row_text}")
         
+        return "\n".join(text_parts)
+
+
+class XLSXParser(BaseParser):
+    """Parse Excel (.xlsx/.xls) files using openpyxl."""
+
+    def parse(self, file_path: str) -> str:
+        from openpyxl import load_workbook
+
+        wb = load_workbook(file_path, read_only=True, data_only=True)
+        text_parts = []
+
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            text_parts.append(f"Sheet: {sheet_name}")
+
+            for row in ws.iter_rows():
+                row_vals = [str(cell.value) if cell.value is not None else "" for cell in row]
+                line = " | ".join(v for v in row_vals if v)
+                if line.strip():
+                    text_parts.append(line)
+
+        wb.close()
         return "\n".join(text_parts)

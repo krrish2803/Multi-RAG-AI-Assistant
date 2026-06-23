@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends
-from beanie.operators import And, Gte
+from beanie.operators import And, GTE
 
 from app.models.user import User
 from app.models.metrics import RequestMetrics, GuardrailEvent

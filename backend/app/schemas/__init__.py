@@ -28,6 +28,13 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+    full_name: str = Field(min_length=1)
+    department: Optional[str] = None
+
+
 # ============================================
 # User Schemas
 # ============================================
@@ -55,6 +62,7 @@ class UserUpdateRequest(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
+    document_ids: Optional[list[str]] = None
 
 
 class SourceCitation(BaseModel):

@@ -23,6 +23,7 @@ export interface User {
 export interface ChatRequest {
   message: string;
   conversation_id?: string;
+  document_ids?: string[];
 }
 
 export interface SourceCitation {

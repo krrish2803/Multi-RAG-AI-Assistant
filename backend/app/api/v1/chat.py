@@ -50,6 +50,7 @@ async def send_message(
             message=request.message,
             conversation_id=request.conversation_id,
             request_id=request_id,
+            document_ids=request.document_ids,
         )
 
         latency_ms = int((time.perf_counter() - start_time) * 1000)
@@ -82,7 +83,7 @@ async def send_message(
                     score=s.get("score", 0.0),
                     content_snippet=s.get("content", "")[:200],
                 )
-                for s in result.get("sources", [])
+                for s in (result.get("sources") or [])
             ],
             blocked=result.get("blocked", False),
             block_reason=result.get("block_reason"),
@@ -124,6 +125,7 @@ async def send_message_stream(
                 message=request.message,
                 conversation_id=request.conversation_id,
                 request_id=request_id,
+                document_ids=request.document_ids,
             )
 
             # Stream response in chunks
@@ -136,7 +138,7 @@ async def send_message_stream(
 
             # Send final event with sources
             latency_ms = int((time.perf_counter() - start_time) * 1000)
-            yield f"data: {json.dumps({'type': 'done', 'sources': result.get('sources', []), 'conversation_id': result['conversation_id'], 'latency_ms': latency_ms})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'sources': result.get('sources') or [], 'conversation_id': result['conversation_id'], 'latency_ms': latency_ms})}\n\n"
 
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"

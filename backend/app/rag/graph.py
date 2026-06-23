@@ -29,6 +29,7 @@ class RAGGraph:
         user_departments: list[str],
         conversation_history: list[dict],
         request_id: str,
+        document_ids: Optional[list[str]] = None,
     ) -> dict:
         """Execute the RAG pipeline."""
         start_time = time.perf_counter()
@@ -40,6 +41,7 @@ class RAGGraph:
             "user_departments": user_departments or [],
             "conversation_history": conversation_history or [],
             "request_id": request_id,
+            "document_ids": document_ids,
             "guardrail_result": None,
             "retrieved_documents": None,
             "generated_response": None,
@@ -97,7 +99,7 @@ class RAGGraph:
 
         return {
             "response": state.get("generated_response", "No response generated."),
-            "sources": state.get("sources", []),
+            "sources": state.get("sources") or [],
             "blocked": state.get("blocked", False),
             "block_reason": state.get("block_reason"),
             "prompt_tokens": state.get("prompt_tokens", 0),

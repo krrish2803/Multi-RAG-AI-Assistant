@@ -12,6 +12,7 @@ class RAGState(TypedDict):
     user_departments: list[str]
     conversation_history: list[dict]
     request_id: str
+    document_ids: Optional[list[str]]
 
     # Pipeline data
     guardrail_result: Optional[dict]

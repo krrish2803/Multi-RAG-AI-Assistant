@@ -36,9 +36,8 @@ Thumbs.db
 # Docker
 docker-compose.override.yml
 
-# Data
-data/uploads/
-data/temp/
+# Uploads
+uploads/
 
 # Logs
 *.log

@@ -1,15 +1,18 @@
 "use client";
 
 import { useState, useEffect, useRef, FormEvent, KeyboardEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import api from "@/lib/api";
 import { useChatStore } from "@/stores/chatStore";
 import { useAuthStore } from "@/stores/authStore";
 import type { ChatResponse, Conversation, Message, SourceCitation } from "@/types";
-import { Send, Plus, MessageSquare, FileText, Clock, AlertTriangle } from "lucide-react";
+import { Send, Plus, MessageSquare, FileText, Clock, AlertTriangle, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 export default function ChatPage() {
   const { user } = useAuthStore();
+  const searchParams = useSearchParams();
+  const initialDocId = searchParams.get("document_id");
   const {
     conversations,
     currentConversationId,
@@ -24,6 +27,7 @@ export default function ChatPage() {
 
   const [input, setInput] = useState("");
   const [selectedSources, setSelectedSources] = useState<SourceCitation[] | null>(null);
+  const [documentIds, setDocumentIds] = useState<string[]>(() => initialDocId ? [initialDocId] : []);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,6 +61,11 @@ export default function ChatPage() {
   const handleNewChat = () => {
     setCurrentConversation(null);
     setMessages([]);
+    setDocumentIds([]);
+    // Remove document_id from URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete("document_id");
+    window.history.replaceState({}, "", url.toString());
   };
 
   const handleSend = async (e: FormEvent) => {
@@ -74,10 +83,14 @@ export default function ChatPage() {
     setIsStreaming(true);
 
     try {
-      const res = await api.post<ChatResponse>("/chat/send", {
+      const payload: Record<string, any> = {
         message: input,
         conversation_id: currentConversationId,
-      });
+      };
+      if (documentIds.length > 0) {
+        payload.document_ids = documentIds;
+      }
+      const res = await api.post<ChatResponse>("/chat/send", payload);
 
       const assistantMessage: Message = {
         id: `resp-${Date.now()}`,
@@ -152,6 +165,23 @@ export default function ChatPage() {
 
       {/* Chat area */}
       <div className="flex-1 flex flex-col">
+        {/* Document filter banner */}
+        {documentIds.length > 0 && (
+          <div className="px-4 py-2 bg-primary/10 border-b border-primary/20 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-primary">
+              <FileText className="w-4 h-4" />
+              <span>Querying a specific document</span>
+            </div>
+            <button
+              onClick={() => { setDocumentIds([]); const url = new URL(window.location.href); url.searchParams.delete("document_id"); window.history.replaceState({}, "", url.toString()); }}
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <X className="w-3 h-3" />
+              Clear filter
+            </button>
+          </div>
+        )}
+
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {messages.length === 0 && (

@@ -72,6 +72,54 @@ Netlify is a strong fit for the frontend. The backend must be hosted separately 
 
 This repository includes `netlify.toml` for Netlify build configuration.
 
+## Render Backend Deployment
+
+Render is a good option for hosting the backend separately from the frontend.
+
+### Option 1: Deploy with Render Dashboard
+
+1. Sign in to Render and connect your GitHub account.
+2. Create a new `Web Service`.
+3. Select the repository: `krrish2803/RAG-AI-CHABOT`.
+4. Configure the service:
+  - Environment: `Docker`
+  - Dockerfile path: `backend/Dockerfile`
+  - Branch: `main`
+  - Start command: leave blank (the Dockerfile already runs `uvicorn`).
+5. Add the required environment variables:
+  - `MONGO_URI`
+  - `QDRANT_URL` or `QDRANT_HOST` / `QDRANT_PORT`
+  - `QDRANT_API_KEY`
+  - `QDRANT_COLLECTION`
+  - `QDRANT_VECTOR_SIZE`
+  - `NVIDIA_API_KEY`
+  - `NVIDIA_CHAT_MODEL`
+  - `NVIDIA_EMBED_MODEL`
+  - `NVIDIA_BASE_URL`
+  - `JWT_SECRET_KEY`
+  - `JWT_ALGORITHM`
+  - `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`
+  - `JWT_REFRESH_TOKEN_EXPIRE_DAYS`
+  - `APP_ENV=production`
+  - `APP_DEBUG=false`
+  - `LOG_LEVEL=INFO`
+  - `FRONTEND_URL` — set this to your Netlify or frontend domain.
+6. Deploy the service.
+
+### Option 2: Use `render.yaml`
+
+Render can automatically configure the backend service using `render.yaml`.
+Add the file below to the repo root and connect the repo in Render.
+
+### CORS and frontend integration
+
+Set `FRONTEND_URL` to the frontend deployment domain so the backend allows requests from the app. On Netlify, set `NEXT_PUBLIC_API_URL` to the Render backend URL followed by `/api/v1`.
+
+### Notes
+
+- If using a managed Mongo service, provide the full `MONGO_URI`.
+- If using local Qdrant in Render, you must also deploy Qdrant separately or use Qdrant Cloud.
+- `PORT` is optional because the Dockerfile exposes `8000` and Render will map traffic automatically.
 ## Environment Variables
 
 | Variable | Required | Description |

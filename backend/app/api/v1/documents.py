@@ -16,7 +16,7 @@ from app.ingestion.pipeline import IngestionPipeline
 
 router = APIRouter()
 
-UPLOAD_DIR = "/app/data/uploads"
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "uploads")
 
 
 def document_to_response(doc: IngestedDocument) -> DocumentResponse:
@@ -45,20 +45,24 @@ async def upload_document(
     settings: Settings = Depends(get_settings),
 ):
     """Upload a document and trigger ingestion pipeline."""
+    max_size = 100 * 1024 * 1024  # 100 MB
+
     # Validate file type
-    allowed_types = {".pdf", ".docx", ".txt", ".csv"}
+    allowed_types = {".pdf", ".docx", ".txt", ".csv", ".xlsx", ".xls"}
     file_ext = os.path.splitext(file.filename)[1].lower()
     if file_ext not in allowed_types:
         from app.core.exceptions import ValidationError
         raise ValidationError(f"File type {file_ext} not supported. Allowed: {', '.join(allowed_types)}")
 
-    # Create upload directory if needed
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-    # Save file
+    # Read and validate file
     document_id = str(uuid.uuid4())
     file_path = os.path.join(UPLOAD_DIR, f"{document_id}_{file.filename}")
     content = await file.read()
+    if len(content) > max_size:
+        raise ValidationError(f"File too large ({len(content) / 1024 / 1024:.1f} MB). Maximum allowed: 100 MB")
+
+    # Save file
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
     with open(file_path, "wb") as f:
         f.write(content)
 
