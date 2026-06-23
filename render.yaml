@@ -1,7 +1,39 @@
 services:
   - type: web_service
-    name: rag-ai-chabot-backend
+    name: rag-ai-assistant-backend
     env: docker
     branch: main
     dockerfilePath: backend/Dockerfile
     plan: starter
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: MONGO_DB
+        value: ragchatbot
+      - key: QDRANT_COLLECTION
+        value: knowledge_base
+      - key: NVIDIA_CHAT_MODEL
+        value: meta/llama-3.1-70b-instruct
+      - key: NVIDIA_EMBED_MODEL
+        value: nvidia/nv-embedqa-e5-v5
+      - key: NVIDIA_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: FRONTEND_URL
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
